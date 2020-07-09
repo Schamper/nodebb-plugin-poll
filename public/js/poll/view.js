@@ -1,8 +1,7 @@
-"use strict";
+'use strict';
 /* globals $, app */
 
 (function(Poll) {
-
 	var View = function(pollData) {
 		this.pollData = pollData;
 	};
@@ -14,7 +13,10 @@
 			var posts = components.get('post');
 			if (posts.length > 0 && parseInt(posts.eq(0).data('pid'), 10) === parseInt(self.pollData.info.pid, 10)) {
 				app.parseAndTranslate('poll/view', { poll: self.pollData }, function(panel) {
-					posts.eq(0).find('[component="post/content"]').prepend(panel);
+					posts
+						.eq(0)
+						.find('[component="post/content"]')
+						.prepend(panel);
 
 					self.dom = {
 						panel: panel,
@@ -23,6 +25,7 @@
 						votingPanel: panel.find('.poll-view-voting'),
 						resultsPanel: panel.find('.poll-view-results'),
 						voteButton: panel.find('.poll-button-vote'),
+						voteAnonymousButton: panel.find('.poll-button-vote-anonymous'),
 						updateVoteButton: panel.find('.poll-button-update-vote'),
 						removeVoteButton: panel.find('.poll-button-remove-vote'),
 						votingPanelButton: panel.find('.poll-button-voting'),
@@ -50,7 +53,7 @@
 	};
 
 	View.prototype.hasPollEndedOrDeleted = function() {
-		return (parseInt(this.pollData.info.ended, 10) === 1 || parseInt(this.pollData.info.deleted, 10) === 1);
+		return parseInt(this.pollData.info.ended, 10) === 1 || parseInt(this.pollData.info.deleted, 10) === 1;
 	};
 
 	View.prototype.voteUpdateAllowed = function() {
@@ -81,15 +84,17 @@
 		this.pollData.options.forEach(function(option) {
 			var el = this.dom.resultsPanel.find('[data-poll-option-id=' + option.id + ']');
 			el.find('.poll-result-votecount span').text(option.voteCount);
-			el.find('.poll-result-progressbar').css('width', option.percentage + '%')
-				.find('span').text(option.percentage);
+			el.find('.poll-result-progressbar')
+				.css('width', option.percentage + '%')
+				.find('span')
+				.text(option.percentage);
 		}, this);
 	};
 
 	View.prototype.showMessage = function(title, content) {
 		var self = this;
 
-		app.parseAndTranslate('poll/view/messages', {title: title, content: content}, function(html) {
+		app.parseAndTranslate('poll/view/messages', { title: title, content: content }, function(html) {
 			self.dom.messages.html(html).removeClass('hidden');
 		});
 	};
@@ -108,17 +113,15 @@
 					}
 				}
 			});
-		})
+		});
 	};
 
 	View.prototype.fillVotingForm = function() {
 		var self = this;
 		this.resetVotingForm();
 		if (this.pollData.vote && this.pollData.vote.options) {
-			this.pollData.vote.options.forEach(function (id) {
-				self.dom.votingForm
-					.find('[data-poll-option-id="' + id + '"].poll-view-option input')
-					.prop('checked', true);
+			this.pollData.vote.options.forEach(function(id) {
+				self.dom.votingForm.find('[data-poll-option-id="' + id + '"].poll-view-option input').prop('checked', true);
 			});
 		}
 	};
@@ -138,6 +141,7 @@
 			}
 		} else {
 			this.showVoteButton();
+			this.showVoteAnonymousButton();
 		}
 		this.dom.votingPanel.removeClass('hidden');
 	};
@@ -148,6 +152,7 @@
 		this.hideRemoveVoteButton();
 		this.resetVotingForm();
 		this.hideVoteButton();
+		this.hideVoteAnonymousButton();
 		this.dom.votingPanel.addClass('hidden');
 	};
 
@@ -170,8 +175,16 @@
 		this.dom.voteButton.removeClass('hidden');
 	};
 
+	View.prototype.showVoteAnonymousButton = function() {
+		this.dom.voteAnonymousButton.removeClass('hidden');
+	};
+
 	View.prototype.hideVoteButton = function() {
 		this.dom.voteButton.addClass('hidden');
+	};
+
+	View.prototype.hideVoteAnonymousButton = function() {
+		this.dom.voteAnonymousButton.addClass('hidden');
 	};
 
 	View.prototype.showUpdateVoteButton = function() {
@@ -210,12 +223,20 @@
 		{
 			// Voting
 			register: function(view) {
-				var self = this;
+				var self = this,
+					preferences = {};
+
 				view.dom.voteButton.off('click').on('click', function() {
-					self.handle(view);
+					preferences.anonymous = false;
+					self.handle(view, preferences);
+				});
+
+				view.dom.voteAnonymousButton.off('click').on('click', function() {
+					preferences.anonymous = true;
+					self.handle(view, preferences);
 				});
 			},
-			handle: function(view) {
+			handle: function(view, preferences) {
 				var form = view.dom.votingPanel.find('form');
 				var votes = form.serializeArray().map(function(option) {
 					return parseInt(option.value, 10);
@@ -224,43 +245,15 @@
 				if (votes.length > 0) {
 					var voteData = {
 						pollId: view.pollData.info.pollId,
-						options: votes
-					};
-
-					Poll.sockets.vote(voteData, function(err, result) {
-						if (err) {
-							return app.alertError(err.message);
-						}
-
-						view.showResultsPanel();
-					});
-				}
-			}
-		},
-		{
-			// Voting
-			register: function(view) {
-				var self = this;
-				view.dom.updateVoteButton.off('click').on('click', function() {
-					self.handle(view);
-				});
-			},
-			handle: function(view) {
-				var form = view.dom.votingPanel.find('form');
-				var votes = form.serializeArray().map(function(option) {
-					return parseInt(option.value, 10);
-				});
-
-				if (votes.length > 0) {
-					var voteData = {
-						pollId: view.pollData.info.pollId,
-						options: votes
+						options: votes,
+						preferences: preferences
 					};
 
 					Poll.sockets.updateVote(voteData, function(err, result) {
 						if (err) {
 							return app.alertError(err.message);
 						}
+
 						view.showResultsPanel();
 					});
 				}
@@ -318,18 +311,23 @@
 				});
 			},
 			handle: function(view, e) {
-				var optionId = $(e.currentTarget).parents('[data-poll-option-id]').data('poll-option-id');
+				var optionId = $(e.currentTarget)
+					.parents('[data-poll-option-id]')
+					.data('poll-option-id');
 
-				Poll.sockets.getOptionDetails({
-					pollId: view.pollData.info.pollId,
-					optionId: optionId
-				}, function(err, details) {
-					if (err) {
-						return app.alertError(err.message);
+				Poll.sockets.getOptionDetails(
+					{
+						pollId: view.pollData.info.pollId,
+						optionId: optionId
+					},
+					function(err, details) {
+						if (err) {
+							return app.alertError(err.message);
+						}
+
+						view.showOptionDetails(details);
 					}
-
-					view.showOptionDetails(details);
-				});
+				);
 			}
 		},
 		{

@@ -1,8 +1,7 @@
-"use strict";
+'use strict';
 /* globals $, app, templates, bootbox, define */
 
 (function(Poll) {
-
 	var Creator = {};
 
 	function init() {
@@ -32,27 +31,27 @@
 	}
 
 	function initRedactor() {
-		$.Redactor.prototype.poll = function () {
+		$.Redactor.prototype.poll = function() {
 			return {
-				init: function () {
+				init: function() {
 					var self = this;
 
 					// require translator as such because it was undefined without it
-					require(['translator'], function (translator) {
+					require(['translator'], function(translator) {
 						translator.translate('[[poll:creator_title]]', function(translated) {
 							var button = self.button.add('poll', translated);
 							self.button.setIcon(button, '<i class="fa fa-bar-chart-o"></i>');
 							self.button.addCallback(button, self.poll.onClick);
 						});
-					})
+					});
 				},
-				onClick: function () {
+				onClick: function() {
 					var self = this;
 					var code = this.code.get();
 					require(['composer'], function(composer) {
 						composerBtnHandle(composer, {
 							value: code,
-							redactor: function (code) {
+							redactor: function(code) {
 								self.code.set(code);
 							}
 						});
@@ -68,10 +67,10 @@
 			return app.alertError('[[poll:error.not_main]]');
 		}
 		if (parseInt(post.cid, 10) === 0) {
-			return app.alertError("[[error:category-not-selected]]");
+			return app.alertError('[[error:category-not-selected]]');
 		}
 
-		Poll.sockets.canCreate({cid: post.cid, pid: post.pid}, function(err, canCreate) {
+		Poll.sockets.canCreate({ cid: post.cid, pid: post.pid }, function(err, canCreate) {
 			if (err || !canCreate) {
 				return app.alertError(err.message);
 			}
@@ -103,7 +102,7 @@
 					}
 
 					if ($.Redactor) textarea.redactor(textarea.value + '<p>' + markup + '</p>');
-					else textarea.value += markup
+					else textarea.value += markup;
 				});
 			});
 		});
@@ -125,7 +124,7 @@
 						label: '[[modules:bootbox.cancel]]',
 						className: 'btn-default',
 						callback: function() {
-							return true
+							return true;
 						}
 					},
 					save: {
@@ -133,7 +132,9 @@
 						className: 'btn-primary',
 						callback: function(e) {
 							clearErrors();
-							var form = $(e.currentTarget).parents('.bootbox').find('#pollCreator');
+							var form = $(e.currentTarget)
+								.parents('.bootbox')
+								.find('#pollCreator');
 							var obj = form.serializeObject();
 
 							// Let's be nice and at least show an error if there are no options
@@ -159,7 +160,8 @@
 			});
 
 			// Add option adder
-			modal.find('#pollAddOption')
+			modal
+				.find('#pollAddOption')
 				.off('click')
 				.on('click', function(e) {
 					var el = $(e.currentTarget);
@@ -174,20 +176,24 @@
 					}
 
 					if (prevOption.val().length != 0) {
-						prevOption.clone().val('').insertBefore(el).focus();
+						prevOption
+							.clone()
+							.val('')
+							.insertBefore(el)
+							.focus();
 					}
 				});
 
-				flatpickr("#pollInputEnd", {
-					enableTime: true,
-					altFormat: "F j, Y h:i K",
-					time_24hr: false,
-					wrap: true
-				});
+			flatpickr('#pollInputEnd', {
+				enableTime: true,
+				altFormat: 'F j, Y h:i K',
+				time_24hr: false,
+				wrap: true
+			});
 
-				if (poll.settings && poll.settings.end) {
-					flatpickr.setDate(poll.settings.end)
-				}
+			if (poll.settings && poll.settings.end) {
+				flatpickr.setDate(poll.settings.end);
+			}
 		});
 	};
 
@@ -201,7 +207,9 @@
 	}
 
 	function clearErrors() {
-		$('#pollErrorBox').addClass('hidden').html('');
+		$('#pollErrorBox')
+			.addClass('hidden')
+			.html('');
 	}
 
 	function dumbifyObject(obj) {
@@ -230,5 +238,4 @@
 	Poll.creator = Creator;
 
 	init();
-
 })(window.Poll);
