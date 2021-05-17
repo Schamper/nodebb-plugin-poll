@@ -26,7 +26,8 @@
     { "hook": "action:topic.restore", "method": "hooks.action.topicRestore" }
   ],
   "staticDirs": {
-    "public": "public"
+    "public": "public",
+    "vendor": "vendor"
   },
   "less": [
     "public/less/style.less"
@@ -37,12 +38,18 @@
     "public/js/poll/sockets.js",
     "public/js/poll/creator.js",
     "public/js/poll/view.js",
-    "public/js/vendor/moment.min.js",
-    "public/js/vendor/flatpickr.min.js",
-    "public/js/vendor/jquery.serialize-object.min.js"
+    "vendor/jquery.serialize-object.min.js"
   ],
   "acpScripts": [
     "public/js/admin.js"
+  ],
+  "modules": {
+    "dayjs.js": "vendor/dayjs.min.js",
+    "flatpickr.js": "vendor/flatpickr.min.js",
+    "flatpickr.i10n.js": "vendor/flatpickr.l10n.js"
+  },
+  "css": [
+    "vendor/flatpickr.min.css"
   ],
   "templates": "templates",
   "languages": "languages",
